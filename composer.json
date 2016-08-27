@@ -1,21 +1,18 @@
 {
-  "name": "bravecollective/php-api",
-  "description": "API Negotiation Layer for BRAVE Core Services",
+  "name": "djdduty/htdsa-api",
+  "description": "PHP utility for communicating with HTDSA secured APIs",
   "keywords": [
-    "eve-online",
-    "auth",
-    "brave"
   ],
   "license": "MIT",
   "require": {
-    "mglinski/ecc": "0.3.2",
+    "mdanter/ecc": "0.4.0",
     "rmccue/requests": ">=1.0"
   },
   "autoload": {
     "classmap": [
       "classes",
-      "classes/Brave",
-      "classes/Brave/Auth"
+      "classes/Htdsa",
+      "classes/Htdsa/Auth"
     ]
   }
 }
