@@ -1,6 +1,6 @@
 <?php
 
-namespace Brave\Auth;
+namespace Htdsa\Auth;
 
 use \Mdanter\Ecc\EccFactory;
 use \Mdanter\Ecc\Primitives\Point;
@@ -12,7 +12,7 @@ use \Mdanter\Ecc\Crypto\Key\PublicKey;
 /**
  * Class CoreAuthHandler
  *
- * @package Brave\Auth
+ * @package Htdsa\Auth
  */
 class CoreAuthHandler implements \Requests_Auth
 {

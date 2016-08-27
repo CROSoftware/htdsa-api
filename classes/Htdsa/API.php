@@ -1,10 +1,10 @@
 <?php
 
-namespace Brave;
+namespace Htdsa;
 
 /**
  * Class Core
- * @package Brave\API
+ * @package Htdsa\API
  */
 class API{
 

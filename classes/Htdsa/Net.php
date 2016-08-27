@@ -1,12 +1,12 @@
 <?php
 
-namespace Brave;
+namespace Htdsa;
 
-use Brave\Auth\CoreAuthHandler;
+use Htdsa\Auth\CoreAuthHandler;
 
 /**
  * Class Net
- * @package Brave\API
+ * @package Htdsa\API
  */
 Class Net{
 
