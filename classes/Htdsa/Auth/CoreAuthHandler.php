@@ -17,151 +17,159 @@ use \Mdanter\Ecc\Crypto\Key\PublicKey;
 class CoreAuthHandler implements \Requests_Auth
 {
 
-	private $debug = FALSE;
+    private $debug = FALSE;
 
-	private $math_adapter = FALSE;
-	private $service_name = FALSE;
-	private $private_key = FALSE;
-	private $public_key = FALSE;
+    private $math_adapter = FALSE;
+    private $service_name = FALSE;
+    private $private_key = FALSE;
+    private $public_key = FALSE;
+    
+    private $last_request_type = 'GET';
 
-	/**
-	 * Constructor
-	 *
-	 * @param      $service
-	 * @param      $private_key
-	 * @param      $public_key
-	 * @param bool $debug
-	 */
-	public function __construct( $service, $private_key, $public_key, $debug = FALSE )
-	{
-		$this->math_adapter = EccFactory::getAdapter();
-		$this->service_name = $service;
-		$this->private_key  = $private_key;
-		$this->public_key   = $public_key;
-		$this->debug        = $debug;
-	}
+    /**
+     * Constructor
+     *
+     * @param      $service
+     * @param      $private_key
+     * @param      $public_key
+     * @param bool $debug
+     */
+    public function __construct( $service, $private_key, $public_key, $debug = FALSE )
+    {
+        $this->math_adapter = EccFactory::getAdapter();
+        $this->service_name = $service;
+        $this->private_key  = $private_key;
+        $this->public_key   = $public_key;
+        $this->debug        = $debug;
+    }
 
-	/**
-	 * @param \Requests_Hooks $hooks
-	 */
-	public function register( \Requests_Hooks &$hooks )
-	{
-		$hooks->register('requests.before_request', [&$this, 'before_request']);
-		$hooks->register('requests.after_request', [&$this, 'after_request']);
-	}
+    /**
+     * @param \Requests_Hooks $hooks
+     */
+    public function register( \Requests_Hooks &$hooks )
+    {
+        $hooks->register('requests.before_request', [&$this, 'before_request']);
+        $hooks->register('requests.after_request', [&$this, 'after_request']);
+    }
 
-	/**
-	 * before_request
-	 * Hook for PHP Requests
-	 *
-	 * @param $url
-	 * @param $headers
-	 * @param $data
-	 */
-	public function before_request( &$url, &$headers, &$data )
-	{
-		// generate a date string
-		$date            = new \DateTime('NOW', new \DateTimeZone("GMT"));
-		$headers['Date'] = $date->format("D, d M Y H:i:s \G\M\T");
+    /**
+     * before_request
+     * Hook for PHP Requests
+     *
+     * @param $url
+     * @param $headers
+     * @param $data
+     */
+    public function before_request( &$url, &$headers, &$data, &$type )
+    {
+        // generate a date string
+        $date            = new \DateTime('NOW', new \DateTimeZone("GMT"));
+        $headers['Date'] = $date->format("D, d M Y H:i:s \G\M\T");
+        $this->last_request_type = $type;
 
-		// build up the data to be signed
-		$request_data = $headers['Date']."\n".$url."\n";
-		if( !empty($data) )
-		{
-			$request_data .= http_build_query($data);
-		}
+        // build up the data to be signed
+        $canon = "$type\n".$headers['Date']."\n$url\n";
+        if( !empty($data) )
+        {
+            $canon .= http_build_query($data);
+        }
 
-		// get a signature for our request
+        $request_data = mb_convert_encoding($canon, 'UTF-8');
 
-		// private key is in hex form, needs to be converted into PrivateKey Object
-		$generator   = EccFactory::getNistCurves()->generator256();
-		$private_key = new PrivateKey($this->math_adapter, $generator, $this->math_adapter->hexDec($this->private_key));
+        // get a signature for our request
 
-		$hash         = $this->math_adapter->hexDec(hash("sha256", $request_data));
-		$signer       = EccFactory::getSigner();
-		$randomK      = RandomGeneratorFactory::getRandomGenerator()->generate($private_key->getPoint()->getOrder());
-		$signatureObj = $signer->sign($private_key, $hash, $randomK);
-		$signature    = $this->math_adapter->decHex($signatureObj->getR()).$this->math_adapter->decHex($signatureObj->getS());
+        // private key is in hex form, needs to be converted into PrivateKey Object
+        $generator   = EccFactory::getNistCurves()->generator256();
+        $private_key = new PrivateKey($this->math_adapter, $generator, $this->math_adapter->hexDec($this->private_key));
 
-		// apply the HTTP headers and send the request
-		$headers['X-Service']   = $this->service_name;
-		$headers['X-Signature'] = $signature;
+        $hash         = $this->math_adapter->hexDec(hash("sha256", $request_data));
+        
+        $signer       = EccFactory::getSigner();
+        $randomK      = RandomGeneratorFactory::getRandomGenerator()->generate($private_key->getPoint()->getOrder());
+        $signatureObj = $signer->sign($private_key, $hash, $randomK);
+        $signature    = $this->math_adapter->decHex($signatureObj->getR()).$this->math_adapter->decHex($signatureObj->getS());
 
-		if( $this->debug )
-		{
-			echo "\n\nRequest Data\n\n";
+        // apply the HTTP headers and send the request
+        $headers['X-Service']   = $this->service_name;
+        $headers['X-Signature'] = $signature;
 
-			echo "URL:\n";
-			var_dump($url);
+        if( $this->debug )
+        {
+            echo "\n\nRequest Data\n\n";
 
-			echo "HEADERS:\n";
-			var_dump($headers);
+            echo "URL:\n";
+            var_dump($url);
 
-			echo "DATA:\n";
-			var_dump($data);
-		}
-	}
+            echo "HEADERS:\n";
+            var_dump($headers);
 
-	/**
-	 * after_request
-	 * Hook for PHP Requests
-	 *
-	 * @param \Requests_Response $return
-	 *
-	 * @throws
-	 */
-	public function after_request( \Requests_Response &$return )
-	{
-		$headers   = $return->headers;
-		$url       = $return->url;
-		$data      = $return->body;
-		$signature = $headers['x-signature'];
+            echo "DATA:\n";
+            var_dump($data);
+        }
+    }
 
-		if( $this->debug )
-		{
-			echo "\n\nResponse Data:\n";
-			var_dump($return);
-		}
+    /**
+     * after_request
+     * Hook for PHP Requests
+     *
+     * @param \Requests_Response $return
+     *
+     * @throws
+     */
+    public function after_request( \Requests_Response &$return )
+    {
+        $headers   = $return->headers;
+        $url       = $return->url;
+        $data      = $return->body;
+        $signature = $headers['x-signature'];
 
-		// Check if signature header exists, if not the request failed
-		if( !isset($headers['x-signature']) or $headers['x-signature'] == '' )
-		{
-			throw new \Exception('Request Failed');
-		}
+        if( $this->debug )
+        {
+            echo "\n\nResponse Data:\n";
+            var_dump($return);
+        }
 
-		// build up the data to be signed
-		$request_data = $this->service_name."\n".$headers['date']."\n".$url."\n";
-		if( !empty($data) )
-		{
-			$request_data .= trim($data);
-		}
+        // Check if signature header exists, if not the request failed
+        if( !isset($headers['x-signature']) or $headers['x-signature'] == '' )
+        {
+            throw new \Exception('Request Failed');
+        }
 
-		// try and validate the signature
+        // build up the data to be signed
+        $request_data = "$this->service_name\n$this->last_request_type\n".$headers['date']."\n$url\n";
+        if( !empty($data) )
+        {
+            $request_data .= trim($data);
+        }
+        
+        $request_data = mb_convert_encoding($canon, 'UTF-8');
 
-		// ------------------------------------
-		$generator = EccFactory::getNistCurves()->generator256();
+        // try and validate the signature
 
-		$order_len  = strlen($this->math_adapter->decHex($generator->getOrder()));
-		$x          = $this->math_adapter->hexDec(substr($this->public_key, 0, $order_len));
-		$y          = $this->math_adapter->hexDec(substr($this->public_key, $order_len));
-		$point      = new Point($this->math_adapter, EccFactory::getNistCurves()->curve256(), $x, $y, $generator->getOrder());
-		$public_key = new PublicKey($this->math_adapter, $generator, $point);
+        // ------------------------------------
+        $generator = EccFactory::getNistCurves()->generator256();
 
-		$r         = $this->math_adapter->hexDec(substr($signature, 0, $order_len));
-		$s         = $this->math_adapter->hexDec(substr($signature, $order_len));
-		$signature = new Signature($r, $s);
+        $order_len  = strlen($this->math_adapter->decHex($generator->getOrder()));
+        $x          = $this->math_adapter->hexDec(substr($this->public_key, 0, $order_len));
+        $y          = $this->math_adapter->hexDec(substr($this->public_key, $order_len));
+        $point      = new Point($this->math_adapter, EccFactory::getNistCurves()->curve256(), $x, $y, $generator->getOrder());
+        $public_key = new PublicKey($this->math_adapter, $generator, $point);
 
-		$signer     = EccFactory::getSigner();
-		$check_hash = $this->math_adapter->hexDec(hash("sha256", $request_data));
-		$result     = $signer->verify($public_key, $signature, $check_hash);
-		// ------------------------------------
+        $r         = $this->math_adapter->hexDec(substr($signature, 0, $order_len));
+        $s         = $this->math_adapter->hexDec(substr($signature, $order_len));
+        $signature = new Signature($r, $s);
 
-		//$result = \ECDSA::validate($request_data, $signature, $this->public_key);
+        $signer     = EccFactory::getSigner();
+        $check_hash = $this->math_adapter->hexDec(hash("sha256", $request_data));
+        $result     = $signer->verify($public_key, $signature, $check_hash);
+        // ------------------------------------
 
-		// if signature validation failed, throw exception
-		if( $result !== TRUE )
-		{
-			throw new \Exception('Signature Does Not Validate!');
-		}
-	}
+        //$result = \ECDSA::validate($request_data, $signature, $this->public_key);
+
+        // if signature validation failed, throw exception
+        if( $result !== TRUE )
+        {
+            throw new \Exception('Signature Does Not Validate!');
+        }
+    }
 }
