@@ -58,4 +58,14 @@ Class Net{
 
         return $response;
     }
+
+    public function get($url, $data=[])
+    {
+        $data = http_build_query($data);
+        if(strlen($data) > 0) $url .= "?";
+        $url .= $data;
+        $response = \Requests::get($url, [], $this->options);
+
+        return $response;
+    }
 }

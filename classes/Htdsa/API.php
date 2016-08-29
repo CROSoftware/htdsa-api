@@ -43,10 +43,10 @@ class API{
 		$this->endpoint .= '/'.$name;
 		$this->endpoint .= ($this->append_slash == true ? '/' : '');
 
-		return new API($this->endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug);
+		return new API($this->endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
 	}
 
-	public function __call($name, $args)
+	public function call($args, $method='GET')
 	{
 		// setup requests layer if its not built yet
 		if($this->net === null)
@@ -54,10 +54,15 @@ class API{
 			$this->net = new Net($this->identity, $this->private_key, $this->public_key, $this->debug);
 		}
 
-		// remove array wrapping from __call() method
-		$args = $args[0];
+		$response = new \stdClass();
 
-		$response = $this->net->post($this->endpoint.'/'.$name.($this->append_slash == true ? '/' : ''), $args);
+		if($method == 'POST') {
+			$response = $this->net->post($this->endpoint.($this->append_slash == true ? '/' : ''), $args);
+		} elseif($method == 'GET') {
+			$response = $this->net->get($this->endpoint.($this->append_slash == true ? '/' : ''), $args);
+		} else {
+			throw new \Exception('Invalid request method.');
+		}
 
 		if($response === false)
 		{
@@ -72,5 +77,15 @@ class API{
 
 		// response looks good, return body after converting from json
 		return json_decode($response->body);
+	}
+
+	public function get($args=array())
+	{
+		return $this->call($args, 'GET');
+	}
+
+	public function post($args=array())
+	{
+		return $this->call($args, 'POST');
 	}
 }
