@@ -9,6 +9,17 @@ use \Mdanter\Ecc\Random\RandomGeneratorFactory;
 use \Mdanter\Ecc\Crypto\Key\PrivateKey;
 use \Mdanter\Ecc\Crypto\Key\PublicKey;
 
+
+function pad($str, $len=64) {
+    $diff = $len - strlen($str);
+    if($diff <= 0) return $str;
+    for($i = 0; $i < $diff; $i++) {
+        $str = '0'.$str;
+    }
+    return $str;
+}
+
+
 /**
  * Class CoreAuthHandler
  *
@@ -87,7 +98,10 @@ class CoreAuthHandler implements \Requests_Auth
         $signer       = EccFactory::getSigner();
         $randomK      = RandomGeneratorFactory::getRandomGenerator()->generate($private_key->getPoint()->getOrder());
         $signatureObj = $signer->sign($private_key, $hash, $randomK);
-        $signature    = $this->math_adapter->decHex($signatureObj->getR()).$this->math_adapter->decHex($signatureObj->getS());
+
+        $r            = $this->math_adapter->decHex($signatureObj->getR());
+        $s            = $this->math_adapter->decHex($signatureObj->getS());
+        $signature    = pad($r).pad($s);
 
         // apply the HTTP headers and send the request
         $headers['X-Service']   = $this->service_name;
@@ -96,6 +110,13 @@ class CoreAuthHandler implements \Requests_Auth
         if( $this->debug )
         {
             echo "\n\nRequest Data\n\n";
+            print "<pre>";
+
+            echo "SIGNATURE DATA:\n";
+            var_dump($signatureObj->getR());
+            var_dump($signatureObj->getS());
+            var_dump($this->math_adapter->decHex($signatureObj->getR()));
+            var_dump($this->math_adapter->decHex($signatureObj->getS()));
 
             echo "URL:\n";
             var_dump($url);
@@ -108,6 +129,7 @@ class CoreAuthHandler implements \Requests_Auth
 
             echo "CANON:\n";
             var_dump($request_data);
+            print "</pre>";
         }
     }
 
