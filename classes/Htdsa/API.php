@@ -70,7 +70,7 @@ class API{
 		}
 
 		// check return status code
-		if($response->status_code !== 200)
+		if($response->status_code < 200 || $response->status_code >= 300)
 		{
 			throw new \Exception('Method Failed('.$response->status_code.'): '.$response->body);
 		}
