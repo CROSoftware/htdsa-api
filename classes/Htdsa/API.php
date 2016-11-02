@@ -40,7 +40,7 @@ class API{
 	public function __get($name)
 	{
 		// append endpoint and return new API object
-		$endpoint = '/'.$name;
+		$endpoint = $this->endpoint.'/'.$name;
 		$endpoint .= ($this->append_slash == true ? '/' : '');
 
 		return new API($endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
@@ -76,7 +76,7 @@ class API{
 		//}
 
 		// response looks good, return body after converting from json
-		return $response->body;
+		return $response;
 		//return json_decode($response->body);
 	}
 
