@@ -40,7 +40,7 @@ class API{
 	public function __get($name)
 	{
 		// append endpoint and return new API object
-		$endpoint .= '/'.$name;
+		$endpoint = '/'.$name;
 		$endpoint .= ($this->append_slash == true ? '/' : '');
 
 		return new API($endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
