@@ -40,10 +40,10 @@ class API{
 	public function __get($name)
 	{
 		// append endpoint and return new API object
-		$this->endpoint .= '/'.$name;
-		$this->endpoint .= ($this->append_slash == true ? '/' : '');
+		$endpoint .= '/'.$name;
+		$endpoint .= ($this->append_slash == true ? '/' : '');
 
-		return new API($this->endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
+		return new API($endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
 	}
 
 	public function call($args, $method='GET', $headers=array())
@@ -70,13 +70,14 @@ class API{
 		}
 
 		// check return status code
-		if($response->status_code < 200 || $response->status_code >= 300)
-		{
-			throw new \Exception('Method Failed('.$response->status_code.'): '.$response->body);
-		}
+		//if($response->status_code < 200 || $response->status_code >= 300)
+		//{
+		//	throw new \Exception('Method Failed('.$response->status_code.'): '.$response->body);
+		//}
 
 		// response looks good, return body after converting from json
-		return json_decode($response->body);
+		return $response->body;
+		//return json_decode($response->body);
 	}
 
 	public function get($args=array(), $headers=array())
