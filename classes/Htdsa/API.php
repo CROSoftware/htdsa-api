@@ -41,7 +41,6 @@ class API{
 	{
 		// append endpoint and return new API object
 		$endpoint = $this->endpoint.'/'.$name;
-		$endpoint .= ($this->append_slash == true ? '/' : '');
 
 		return new API($endpoint, $this->identity, $this->private_key, $this->public_key, $this->debug, $this->append_slash);
 	}
@@ -55,13 +54,42 @@ class API{
 		}
 
 		$response = new \stdClass();
+		$url = $this->endpoint;
+		if(substr($endpoint, -1) != '/' && $this->append_slash == true){
+			$url .= '/';
+		}
+
+		switch($method) {
+			case 'POST':
+				$response = $this->net->post($url, $args, $headers);
+				break;
+			case 'PUT':
+				$response = $this->net->put($url, $args, $headers);
+				break;
+			case 'PATCH':
+				$response = $this->net->patch($url, $args, $headers);
+				break;
+			case 'GET':
+				$response = $this->net->get($url, $args, $headers);
+				break;
+			case 'DELETE':
+				$response = $this->net->delete($url, $args, $headers);
+				break;
+			default:
+				throw new \Exception('Invalid request method.');
+				break;
+		}
 
 		if($method == 'POST') {
 			$response = $this->net->post($this->endpoint.($this->append_slash == true ? '/' : ''), $args, $headers);
+		} elseif($method == 'PUT') {
+			$response = $this->net->put($this->endpoint.($this->append_slash == true ? '/' : ''), $args, $headers);
+		} elseif($method == 'PATCH') {
+			$response = $this->net->get($this->endpoint.($this->append_slash == true ? '/' : ''), $args, $headers);
 		} elseif($method == 'GET') {
 			$response = $this->net->get($this->endpoint.($this->append_slash == true ? '/' : ''), $args, $headers);
 		} else {
-			throw new \Exception('Invalid request method.');
+
 		}
 
 		if($response === false)

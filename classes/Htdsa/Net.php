@@ -63,6 +63,43 @@ Class Net{
         return $response;
     }
 
+    /**
+     * @param $url
+     * @param array $data
+     * @return mixed
+     */
+    public function put($url, $data = [], $headers = [])
+    {
+        if(empty($headers['Accept'])) {
+            $headers['Accept'] = 'application/json';
+        }
+
+	    $response = \Requests::put($url, $headers, $data, $this->options);
+
+        return $response;
+    }
+
+    /**
+     * @param $url
+     * @param array $data
+     * @return mixed
+     */
+    public function patch($url, $data = [], $headers = [])
+    {
+        if(empty($headers['Accept'])) {
+            $headers['Accept'] = 'application/json';
+        }
+
+	    $response = \Requests::patch($url, $headers, $data, $this->options);
+
+        return $response;
+    }
+
+    /**
+     * @param $url
+     * @param array $data
+     * @return mixed
+     */
     public function get($url, $data=[], $headers = [])
     {
         if(empty($headers['Accept'])) {
@@ -73,6 +110,20 @@ Class Net{
         if(strlen($data) > 0) $url .= "?";
         $url .= $data;
         $response = \Requests::get($url, $headers, $this->options);
+
+        return $response;
+    }
+
+    public function delete($url, $data=[], $headers = [])
+    {
+        if(empty($headers['Accept'])) {
+            $headers['Accept'] = 'application/json';
+        }
+
+        $data = http_build_query($data);
+        if(strlen($data) > 0) $url .= "?";
+        $url .= $data;
+        $response = \Requests::delete($url, $headers, $this->options);
 
         return $response;
     }
