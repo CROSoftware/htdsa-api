@@ -1,7 +1,8 @@
 {
-  "name": "crosoftware/htdsa-api",
+  "name": "bravecollective/htdsa-api",
   "description": "PHP utility for communicating with HTDSA secured APIs",
   "keywords": [
+    "htdsa"
   ],
   "license": "MIT",
   "require": {
